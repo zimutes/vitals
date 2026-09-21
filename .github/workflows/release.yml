@@ -1,0 +1,109 @@
+# Compila e publica os executáveis de uma versão.
+#
+# Dispara numa etiqueta "v*" (git tag v1.1 && git push origin v1.1), ou à mão pelo
+# separador Actions. Os binários nunca entram no repositório: são construídos aqui e
+# anexados à release, que é de onde o install.sh os vai buscar.
+
+name: Publicar versão
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      etiqueta:
+        description: "Etiqueta a publicar (ex.: v1.1)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Linux (${{ matrix.alvo }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        alvo: [linux-x64, linux-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # Só o comando de terminal: o widget é WPF e não existe fora do Windows.
+      - name: Compilar
+        run: >
+          dotnet publish Sensores.Cli -c Release -r ${{ matrix.alvo }}
+          --self-contained true -p:PublishSingleFile=true
+          -o saida/${{ matrix.alvo }}
+
+      - name: Empacotar
+        run: |
+          chmod +x saida/${{ matrix.alvo }}/vitals
+          rm -f saida/${{ matrix.alvo }}/*.pdb
+          tar -czf vitals-${{ matrix.alvo }}.tar.gz -C saida/${{ matrix.alvo }} .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vitals-${{ matrix.alvo }}
+          path: vitals-${{ matrix.alvo }}.tar.gz
+
+  windows:
+    name: Windows (win-x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Compilar o widget e o comando
+        shell: pwsh
+        run: |
+          dotnet publish Sensores.Widget -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -o saida/win-x64
+          dotnet publish Sensores.Cli -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -o saida/win-x64
+
+      - name: Empacotar
+        shell: pwsh
+        run: |
+          Remove-Item saida/win-x64/*.pdb -ErrorAction SilentlyContinue
+          Compress-Archive -Path saida/win-x64/* -DestinationPath vitals-win-x64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vitals-win-x64
+          path: vitals-win-x64.zip
+
+  publicar:
+    name: Publicar a release
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: recolha
+          merge-multiple: true
+
+      # O install.sh confere este ficheiro antes de instalar seja o que for.
+      - name: Somas de verificação
+        run: |
+          cd recolha
+          sha256sum vitals-*.tar.gz vitals-*.zip > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Criar a release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ETIQUETA: ${{ github.event.inputs.etiqueta || github.ref_name }}
+        run: |
+          gh release create "$ETIQUETA" recolha/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Vitals $ETIQUETA" \
+            --generate-notes
