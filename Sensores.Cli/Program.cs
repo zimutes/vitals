@@ -8,7 +8,7 @@ Console.OutputEncoding = Encoding.UTF8;
 
 var argumentos = args.Select(a => a.ToLowerInvariant()).ToHashSet();
 
-if (argumentos.Contains("--ajuda") || argumentos.Contains("-h") || argumentos.Contains("--help"))
+if (argumentos.Contains("--help") || argumentos.Contains("-h") || argumentos.Contains("--ajuda"))
 {
     Console.WriteLine($"""
         {Marca.Assinatura}
@@ -16,11 +16,11 @@ if (argumentos.Contains("--ajuda") || argumentos.Contains("-h") || argumentos.Co
           vitals                uma leitura e sai
           vitals --watch        fica a actualizar (ctrl+c para sair)
           vitals --json         uma leitura em JSON
-          vitals --sensores     todos os sensores detectados, com os nomes reais
-          vitals --help         esta ajuda (tambem --ajuda ou -h)
+          vitals --sensors      todos os sensores detectados, com os nomes reais
+          vitals --help         esta ajuda (tambem -h)
 
         Opcoes:
-          --intervalo <seg>    periodo do --watch (por omissao 1)
+          --interval <seg>     periodo do --watch (por omissao 1)
 
         O widget e um programa separado: Vitals.exe (janela junto ao relogio).
         """);
@@ -29,7 +29,7 @@ if (argumentos.Contains("--ajuda") || argumentos.Contains("-h") || argumentos.Co
 
 using var leitor = new Leitor();
 
-if (argumentos.Contains("--sensores"))
+if (argumentos.Contains("--sensors") || argumentos.Contains("--sensores"))
 {
     Console.WriteLine($"{Marca.Assinatura}\n");
     string? anterior = null;
@@ -78,7 +78,8 @@ if (argumentos.Contains("--json"))
 }
 
 var intervalo = 1.0;
-var iIntervalo = Array.FindIndex(args, a => a.Equals("--intervalo", StringComparison.OrdinalIgnoreCase));
+var iIntervalo = Array.FindIndex(args, a => a.Equals("--interval", StringComparison.OrdinalIgnoreCase)
+                                         || a.Equals("--intervalo", StringComparison.OrdinalIgnoreCase));
 if (iIntervalo >= 0 && iIntervalo + 1 < args.Length)
     double.TryParse(args[iIntervalo + 1], CultureInfo.InvariantCulture, out intervalo);
 

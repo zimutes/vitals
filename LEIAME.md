@@ -76,7 +76,7 @@ menu Iniciar, põe o `vitals` no `PATH` e agenda o arranque com o Windows. Ser a
 importa: só assim a tarefa de arranque fica com privilégios, que é o que as temperaturas dos
 discos exigem. Sem isso instala à mesma, e diz o que se perde.
 
-O `.\uninstall.ps1` remove tudo — com `-Tudo` apaga também as preferências.
+O `.\uninstall.ps1` remove tudo — com `-All` apaga também as preferências.
 
 Em Linux o instalador é outro, e chega um comando — ver [Linux](#linux) mais abaixo.
 
@@ -87,9 +87,9 @@ Depois de instalado, o widget está no menu Iniciar como **Vitals**, e num termi
 ```
 vitals                     uma leitura
 vitals --watch             ao vivo, redesenha no sítio (↑↓ ou j/k para rolar, q para sair)
-vitals --watch --intervalo 2
+vitals --watch --interval 2
 vitals --json              para outros programas
-vitals --sensores          todos os sensores detectados, com os nomes reais
+vitals --sensors           todos os sensores detectados, com os nomes reais
 vitals --hwinfo            o que o HWiNFO está a publicar, se estiver a correr
 vitals --help
 ```
@@ -159,8 +159,8 @@ curl -fsSL https://raw.githubusercontent.com/zimutes/vitals/main/install.sh | sh
 
 Descarrega o executável autónomo para a tua arquitectura, confere-o contra o `SHA256SUMS`
 publicado, instala-o em `~/.local/share/vitals` e deixa o comando em `~/.local/bin`. Não
-precisa de root nem de ter o .NET instalado. Com `--sistema` instala em `/usr/local` para
-toda a gente, com `--versao v1.1` fixa uma versão, e `--desinstalar` remove.
+precisa de root nem de ter o .NET instalado. Com `--system` instala em `/usr/local` para
+toda a gente, com `--version v1.1` fixa uma versão, e `--uninstall` remove.
 
 ### O que muda
 
@@ -187,7 +187,7 @@ sudo dnf install lm_sensors      # Debian/Ubuntu: sudo apt install lm-sensors
 sudo sensors-detect --auto
 ```
 
-Se faltar uma linha que esperavas, o `vitals --sensores` lista todos os chips e sensores
+Se faltar uma linha que esperavas, o `vitals --sensors` lista todos os chips e sensores
 encontrados em `/sys/class/hwmon`. É essa saída que deve acompanhar um relatório.
 
 Vale aqui o mesmo aviso do princípio, e com mais força: o caminho de Linux foi experimentado
