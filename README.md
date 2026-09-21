@@ -118,9 +118,9 @@ attached are very welcome.
 - HWiNFO 8.53+ running, *Shared Memory Support* on, if you want the hot spot row
 
 **Linux** — x64 or arm64, for the terminal command only. The published build is
-self-contained: no .NET to install, no root. See [Linux](#linux) below.
+self-contained: no .NET to install, no root. See [Installing on Linux](#installing-on-linux) below.
 
-## Running
+## Installing on Windows
 
 Clone the repository and run the installer from a PowerShell prompt, **as administrator**:
 
@@ -195,17 +195,22 @@ belongs in an elevated logon task rather than in the Run key.
 
 ---
 
-## Linux
+## Installing on Linux
 
-The terminal command runs on Linux. The widget does not — it is WPF, which is Windows-only.
+One command, no root, no .NET:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/zimutes/vitals/main/install.sh | sh
 ```
 
-That downloads the self-contained binary for your architecture, checks it against the
-published `SHA256SUMS`, installs it under `~/.local/share/vitals` and links it into
-`~/.local/bin`. No root and no .NET needed. `--system` installs into `/usr/local` for
+Then run `vitals`, or `vitals --watch` to keep it updating.
+
+**What you get is the terminal command, not the widget.** The widget is WPF and only exists
+on Windows; on Linux, `vitals` prints the same readings in your terminal.
+
+The installer downloads the self-contained binary for your architecture, checks it against
+the published `SHA256SUMS`, installs it under `~/.local/share/vitals` and links it into
+`~/.local/bin`. `--system` installs into `/usr/local` for
 everyone instead, `--version v1.1` pins a version, and `--uninstall` removes it again.
 
 To build it yourself instead, see [Building](#building).

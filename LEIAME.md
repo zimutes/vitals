@@ -63,7 +63,7 @@ vem cada número — em [docs/sensor-access.md](docs/sensor-access.md) (em ingl�
 O que não estiver disponível aparece como `n/d` e a linha some-se. O Vitals nunca inventa
 um número plausível para substituir um sensor em falta.
 
-## Instalação
+## Instalação em Windows
 
 Num terminal PowerShell **como administrador**, na pasta do repositório:
 
@@ -78,7 +78,7 @@ discos exigem. Sem isso instala à mesma, e diz o que se perde.
 
 O `.\uninstall.ps1` remove tudo — com `-All` apaga também as preferências.
 
-Em Linux o instalador é outro, e chega um comando — ver [Linux](#linux) mais abaixo.
+Em Linux o instalador é outro, e chega um comando — ver [Instalação em Linux](#instalação-em-linux) mais abaixo.
 
 ## Utilização
 
@@ -149,17 +149,22 @@ Depois desliga *Iniciar com o Windows* no menu, para não arrancar duas vezes.
 
 ---
 
-## Linux
+## Instalação em Linux
 
-O comando de terminal corre em Linux. O widget não — é WPF, que só existe em Windows.
+Um comando, sem root e sem .NET:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/zimutes/vitals/main/install.sh | sh
 ```
 
-Descarrega o executável autónomo para a tua arquitectura, confere-o contra o `SHA256SUMS`
-publicado, instala-o em `~/.local/share/vitals` e deixa o comando em `~/.local/bin`. Não
-precisa de root nem de ter o .NET instalado. Com `--system` instala em `/usr/local` para
+Depois é correr `vitals`, ou `vitals --watch` para ficar a actualizar.
+
+**O que instalas é o comando de terminal, não o widget.** O widget é WPF e só existe em
+Windows; em Linux o `vitals` mostra as mesmas leituras no terminal.
+
+O instalador descarrega o executável autónomo para a tua arquitectura, confere-o contra o
+`SHA256SUMS` publicado, instala-o em `~/.local/share/vitals` e deixa o comando em
+`~/.local/bin`. Com `--system` instala em `/usr/local` para
 toda a gente, com `--version v1.1` fixa uma versão, e `--uninstall` remove.
 
 ### O que muda
