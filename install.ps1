@@ -10,14 +10,14 @@
 
     Uso:
         .\install.ps1                  instala ou actualiza
-        .\install.ps1 -SemArranque     não agenda o arranque com o Windows
-        .\install.ps1 -SemPath         não mexe no PATH
+        .\install.ps1 -NoAutostart     não agenda o arranque com o Windows
+        .\install.ps1 -NoPath          não mexe no PATH
 #>
 
 [CmdletBinding()]
 param(
-    [switch]$SemArranque,
-    [switch]$SemPath
+    [Alias("SemArranque")][switch]$NoAutostart,
+    [Alias("SemPath")][switch]$NoPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -73,7 +73,7 @@ Feito "atalho no menu Iniciar"
 
 # ---------- 4. comando de terminal ----------
 
-if (-not $SemPath) {
+if (-not $NoPath) {
     $pasta = "$destino\cli"
     $path = [Environment]::GetEnvironmentVariable("Path", "User")
     if (($path -split ';') -notcontains $pasta) {
@@ -85,7 +85,7 @@ if (-not $SemPath) {
 
 # ---------- 5. arranque com o Windows ----------
 
-if (-not $SemArranque) {
+if (-not $NoAutostart) {
     $elevado = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
         [Security.Principal.WindowsBuiltInRole]::Administrator)
 

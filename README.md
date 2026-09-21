@@ -103,7 +103,7 @@ never substitutes a plausible-looking number for a missing sensor.
 | Laptops | **Untested** | Battery row appears automatically; the discrete GPU is preferred over the integrated one |
 | Multiple monitors | **Tested** | The widget stays on the display you left it on |
 
-If you run it on hardware that isn't listed, `vitals --sensores` prints every sensor the
+If you run it on hardware that isn't listed, `vitals --sensors` prints every sensor the
 library can see, which is exactly what is needed to add support. Issues with that output
 attached are very welcome.
 
@@ -133,16 +133,16 @@ menu shortcut, puts `vitals` on your `PATH`, and schedules the widget to start w
 Windows. Administrator matters: the logon task is then created elevated, which is what disk
 temperatures need. Without it the installer still works, and says what you lose.
 
-`.\uninstall.ps1` removes all of it — add `-Tudo` to drop your saved preferences as well.
+`.\uninstall.ps1` removes all of it — add `-All` to drop your saved preferences as well.
 
 Once installed, the widget is in the Start menu as **Vitals**, and in a new terminal:
 
 ```
 vitals                     one reading
 vitals --watch             live, redraws in place (↑↓ or j/k to scroll, q to quit)
-vitals --watch --intervalo 2
+vitals --watch --interval 2
 vitals --json              machine-readable
-vitals --sensores          every sensor detected, with its real name
+vitals --sensors           every sensor detected, with its real name
 vitals --hwinfo            what HWiNFO is publishing, if it is running
 vitals --help
 ```
@@ -205,8 +205,8 @@ curl -fsSL https://raw.githubusercontent.com/zimutes/vitals/main/install.sh | sh
 
 That downloads the self-contained binary for your architecture, checks it against the
 published `SHA256SUMS`, installs it under `~/.local/share/vitals` and links it into
-`~/.local/bin`. No root and no .NET needed. `--sistema` installs into `/usr/local` for
-everyone instead, `--versao v1.1` pins a version, and `--desinstalar` removes it again.
+`~/.local/bin`. No root and no .NET needed. `--system` installs into `/usr/local` for
+everyone instead, `--version v1.1` pins a version, and `--uninstall` removes it again.
 
 To build it yourself instead, see [Building](#building).
 
@@ -234,7 +234,7 @@ sudo dnf install lm_sensors      # Debian/Ubuntu: sudo apt install lm-sensors
 sudo sensors-detect --auto
 ```
 
-If a row you expected is missing, `vitals --sensores` lists every chip and sensor found
+If a row you expected is missing, `vitals --sensors` lists every chip and sensor found
 under `/sys/class/hwmon`. That output is what an issue should carry.
 
 The same caveat as everywhere else applies, only more so: the Linux path was tried on a

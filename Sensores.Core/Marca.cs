@@ -5,7 +5,7 @@ public static class Marca
 {
     public const string Nome = "Vitals";
     public const string Autor = "by zimutes";
-    public const string Versao = "1.0";
+    public const string Versao = "1.1";
 
     public static string Assinatura => $"{Nome} {Versao} · {Autor}";
 }

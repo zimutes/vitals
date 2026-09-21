@@ -11,9 +11,9 @@
 #       curl -fsSL https://raw.githubusercontent.com/zimutes/vitals/main/install.sh | sh
 #
 #       ./install.sh                   instala ou actualiza, só para este utilizador
-#       ./install.sh --sistema         instala em /usr/local, para todos (pede sudo)
-#       ./install.sh --versao v1.1     instala uma versão determinada
-#       ./install.sh --desinstalar     remove
+#       ./install.sh --system          instala em /usr/local, para todos (pede sudo)
+#       ./install.sh --version v1.1    instala uma versão determinada
+#       ./install.sh --uninstall       remove
 #
 
 set -eu
@@ -43,14 +43,21 @@ versao=''
 
 while [ $# -gt 0 ]; do
     case "$1" in
-        --sistema)      sistema=1 ;;
-        --desinstalar)  desinstalar=1 ;;
-        --versao)       shift; [ $# -gt 0 ] || erro "falta a versão a seguir a --versao."; versao="$1" ;;
-        --ajuda|--help|-h)
-            printf '%s
-'                 "Instala o Vitals em Linux — o comando de terminal."                 ""                 "  ./install.sh                 instala ou actualiza, so para este utilizador"                 "  ./install.sh --sistema       instala em /usr/local, para todos (pede sudo)"                 "  ./install.sh --versao v1.1   instala uma versao determinada"                 "  ./install.sh --desinstalar   remove"
+        --system|--sistema)        sistema=1 ;;
+        --uninstall|--desinstalar) desinstalar=1 ;;
+        --version|--versao)        shift; [ $# -gt 0 ] || erro "falta a versão a seguir a --version."; versao="$1" ;;
+        --help|--ajuda|-h)
+            printf '%s\n' \
+                "Instala o Vitals em Linux — o comando de terminal." \
+                "" \
+                "  ./install.sh                  instala ou actualiza, so para este utilizador" \
+                "  ./install.sh --system         instala em /usr/local, para todos (pede sudo)" \
+                "  ./install.sh --version v1.1   instala uma versao determinada" \
+                "  ./install.sh --uninstall      remove" \
+                "" \
+                "As formas em portugues (--sistema, --versao, --desinstalar) continuam a servir."
             exit 0 ;;
-        *)              erro "argumento desconhecido: $1" ;;
+        *)                         erro "argumento desconhecido: $1" ;;
     esac
     shift
 done

@@ -2,12 +2,12 @@
     Remove o Vitals: fecha-o, apaga a instalação, o atalho, a tarefa de arranque e a
     entrada no PATH.
 
-    As preferências em %APPDATA%\Vitals ficam, a não ser que se use -Tudo — assim
+    As preferências em %APPDATA%\Vitals ficam, a não ser que se use -All — assim
     uma reinstalação volta a encontrar as linhas escolhidas e a posição da janela.
 #>
 
 [CmdletBinding()]
-param([switch]$Tudo)
+param([Alias("Tudo")][switch]$All)
 
 $ErrorActionPreference = "Continue"
 
@@ -41,12 +41,12 @@ if (($path -split ';') -contains $pasta) {
 
 if (Test-Path $destino) { Remove-Item $destino -Recurse -Force; Feito "ficheiros removidos" }
 
-if ($Tudo -and (Test-Path $preferencias)) {
+if ($All -and (Test-Path $preferencias)) {
     Remove-Item $preferencias -Recurse -Force
     Feito "preferências removidas"
 }
 elseif (Test-Path $preferencias) {
-    Write-Host "  preferências mantidas em $preferencias (usa -Tudo para as apagar)" -ForegroundColor Yellow
+    Write-Host "  preferências mantidas em $preferencias (usa -All para as apagar)" -ForegroundColor Yellow
 }
 
 Write-Host "`nRemovido.`n" -ForegroundColor White
