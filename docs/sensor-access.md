@@ -22,6 +22,10 @@ number or produces nothing.
 | NVAPI `ThermChannelGetStatus` (private) | yes | yes | **no** | Two channels only — see below |
 | HWiNFO ≥ 8.53 | yes | yes | **yes** | Own kernel driver; also per-GDDR7-module temperatures |
 
+"Core" is what these interfaces call the overall chip temperature, from the reference
+sensor. It is not the hottest point of the die, so Vitals labels that row `chip`, not
+`core`; the hottest point is the hot spot.
+
 ### The private NVAPI thermal call
 
 `nvapi_QueryInterface(0x65FE3AAD)` resolves to `NvAPI_GPU_ThermChannelGetStatus`. The
@@ -60,6 +64,20 @@ So the hotspot is genuinely not behind this interface. LibreHardwareMonitor uses
 call (its assembly contains both `0x65FE3AAD` and the Ver-3 constant `0x334C8`) and reports
 the same two temperatures.
 
+### Where the RTX 50 hot spot actually lives
+
+*Not verified on this machine — reported in
+[LACT issue #1114](https://github.com/ilya-zlobintsev/LACT/issues/1114), October 2026.*
+
+The sensor never left the hardware; NVIDIA only stopped publishing it. It sits in the GPU's
+MMIO space: **six consecutive dwords at BAR0 offset `0x45C`**. Bit 31 marks a valid sensor,
+`(raw & 0xFFFF) / 256.0` is °C (8.8 fixed point), and the hot spot is the maximum of the
+valid ones. On an RTX 5080 this read 55.6 °C at idle, within 1 °C of HWMonitor 1.65.
+
+Reading BAR0 needs a kernel driver that maps physical memory — that is what HWiNFO,
+HWMonitor, AIDA64 and GPU-Z do. Vitals ships no driver (see the WinRing0 note below), so on
+RTX 50 cards it takes the hot spot from HWiNFO instead.
+
 ### Thermal headroom (T.Limit) — the number that *is* published
 
 `nvmlDeviceGetTemperatureThreshold` returns the card's absolute limits:
@@ -72,7 +90,7 @@ threshold 0 (shutdown)           90 °C
 
 `nvidia-smi`'s "GPU Current T.Limit Temp" is simply `85 − current core`. Verified twice:
 core 74 °C → T.Limit 11; core 48 °C → T.Limit 37. Vitals shows this as `margem` and also
-uses these limits to colour the core row, instead of hardcoded thresholds.
+uses these limits to colour the chip row, instead of hardcoded thresholds.
 
 ---
 

@@ -24,12 +24,12 @@ vem cada número — em [docs/sensor-access.md](docs/sensor-access.md) (em ingl�
 > estar noutro ou não existir de todo. Conta com linhas em falta. Sem garantia de espécie
 > alguma, expressa ou implícita — ver [LICENSE](LICENSE).
 >
-> **O ponto quente da gráfica precisa do HWiNFO.** A NVIDIA não publica esse sensor em
-> interface nenhuma, por isso o Vitals vai buscá-lo à memória partilhada do HWiNFO. A linha
-> `hotspot` e as temperaturas de cada módulo GDDR só aparecem com o **HWiNFO 8.53 ou mais
-> recente a correr, e com o *Shared Memory Support* ligado nas definições** — os pormenores
-> estão [nas perguntas](#o-ponto-quente-não-vem-da-nvidia-vem-do-hwinfo). Sem isso não
-> rebenta nada: essas linhas simplesmente desaparecem.
+> **Nas RTX 50, o ponto quente da gráfica precisa do HWiNFO.** A NVIDIA tirou esse sensor
+> das interfaces públicas, por isso o Vitals vai buscá-lo ao HWiNFO. A linha `hotspot`, a
+> `delta` e as temperaturas de cada módulo GDDR só aparecem com o **HWiNFO 8.53 ou mais
+> recente a correr, com o *Shared Memory Support* ligado ou o sensor a publicar no gadget**
+> — os pormenores estão [nas perguntas](#o-ponto-quente-não-vem-da-nvidia-vem-do-hwinfo).
+> Sem isso não rebenta nada: essas linhas simplesmente desaparecem.
 >
 > **Este ficheiro foi escrito por IA** (Claude), a partir do código, e revisto pelo autor
 > antes de ser publicado.
@@ -47,10 +47,10 @@ vem cada número — em [docs/sensor-access.md](docs/sensor-access.md) (em ingl�
 
 | Leitura | Fonte | Precisa de administrador |
 |---|---|---|
-| Temperatura do core da GPU | NVML / API do fabricante | não |
-| **Junção da memória da GPU** | API do fabricante | não |
+| Temperatura geral do chip da GPU (linha `chip`) | NVML / API do fabricante | não |
+| **Junção da memória da GPU** (linha `memória`) | API do fabricante | não |
 | **Margem térmica (T.Limit)** | limites da NVML | não |
-| **Ponto quente da GPU** | memória partilhada do HWiNFO | não, mas o HWiNFO tem de correr |
+| **Ponto quente da GPU** | a placa (AMD, NVIDIA até à série 40); nas RTX 50, o HWiNFO | não, mas nas RTX 50 o HWiNFO tem de correr |
 | Temperatura de cada módulo GDDR7 | memória partilhada do HWiNFO | não, mas o HWiNFO tem de correr |
 | Uso, VRAM, potência e ventoinha da GPU | API do fabricante | não |
 | Uso do CPU | contadores do Windows | não |
@@ -120,7 +120,7 @@ Se o redimensionares à mão, reage nas **duas** direcções:
   valores em quatro colunas.
 - **A altura** decide quantas linhas cabem. O que não couber é **cortado, não rolado** —
   pequeno quer dizer "estou a jogar, mostra-me o que interessa", por isso as linhas são
-  ordenadas por importância (core, hotspot, delta, margem, junção, cargas, memória, discos)
+  ordenadas por importância (chip, hotspot, delta, margem, memória da gráfica, cargas, RAM, discos)
   e cortadas pelo fim. A dica diz quantas ficaram de fora.
 - **Pequeno ou estreito passa a compacto**: sem cabeçalho, rodapé nem títulos de secção, e
   com os espaços ao mínimo. Abaixo de 190 px de largura saem também as barras, para as
@@ -177,12 +177,12 @@ tudo em ficheiros de texto, e o `FonteLinux` lê-os directamente.
 | Temperatura do CPU | `k10temp`, `zenpower`, `coretemp` | **Funciona** — ao contrário do Windows, onde o driver costuma estar bloqueado |
 | Carga e nome do CPU | `/proc/stat`, `/proc/cpuinfo` | |
 | Memória | `/proc/meminfo` | |
-| Gráfica AMD: core, junção, uso, VRAM | hwmon `amdgpu`, `/sys/class/drm` | A junção vem de graça: o kernel publica-a como `temp2_input` |
-| Gráfica NVIDIA: core, margem térmica | hwmon `nvidia`, NVML | **O uso e a VRAM ficam em branco** — ainda não são lidos em Linux |
+| Gráfica AMD: chip, hotspot, memória, uso, VRAM | hwmon `amdgpu`, `/sys/class/drm` | O hotspot vem de graça: o kernel publica-o como `temp2_input` (e chama-lhe *junction*) |
+| Gráfica NVIDIA: chip, margem térmica | hwmon `nvidia`, NVML | **O uso e a VRAM ficam em branco** — ainda não são lidos em Linux |
 | Potência e ventoinha da gráfica | hwmon | |
 | Temperatura dos discos | hwmon `nvme`, `drivetemp` | Os SATA precisam de `modprobe drivetemp`; a ligação ao ponto de montagem é aproximada |
 | Bateria | `/sys/class/power_supply/BAT*` | |
-| Ponto quente, GDDR módulo a módulo | — | Não existe: vêm do HWiNFO, que é só Windows |
+| Ponto quente nas NVIDIA, GDDR módulo a módulo | — | Não existe: vêm do HWiNFO, que é só Windows |
 
 Os chips da motherboard — ventoinhas da caixa, voltagens — precisam do módulo do kernel
 carregado primeiro:
@@ -204,22 +204,27 @@ em duas ou três máquinas, não em muitas.
 
 ### O ponto quente não vem da NVIDIA, vem do HWiNFO
 
-A NVIDIA não o expõe em interface pública nenhuma. Numa RTX 5070 foi verificado pelo
-`nvidia-smi`, pela LibreHardwareMonitor, por um varrimento dos campos da NVML, e pela API
-privada `ThermChannelGetStatus` mapeada bit a bit — esta última devolve exactamente dois
-canais: core e junção de memória.
+Nas RTX 50 a NVIDIA tirou-o das interfaces públicas; o sensor continua lá, só deixou de ser
+publicado. Numa RTX 5070 foi verificado pelo `nvidia-smi`, pela LibreHardwareMonitor, por
+um varrimento dos campos da NVML, e pela API privada `ThermChannelGetStatus` mapeada bit a
+bit — esta última devolve exactamente dois canais: a temperatura geral do chip e a junção
+de memória. As AMD e as NVIDIA até à série 40 publicam-no, e aí o Vitals lê-o da placa.
 
-**O HWiNFO lê-o à mesma**, com driver de kernel próprio, directamente da placa — e é assim
-que consegue também uma temperatura para cada módulo GDDR7. O Vitals lê a memória
-partilhada do HWiNFO (`HWiNFO_SENS_SM2`) quando está disponível, e mostra a linha
-`hotspot` e uma `delta` de hotspot menos core. É preciso:
+**O HWiNFO lê-o à mesma**, com driver de kernel próprio, directamente dos registos da placa
+— e é assim que consegue também uma temperatura para cada módulo GDDR7. O Vitals vai
+buscá-lo ao HWiNFO e mostra a linha `hotspot` e uma `delta` de hotspot menos chip. É
+preciso o **HWiNFO 8.53 ou mais recente** (as versões anteriores não têm o sensor nas
+Blackwell) a correr, e uma de duas coisas ligada:
 
-- **HWiNFO 8.53 ou mais recente** — as versões anteriores não têm o sensor nas Blackwell;
-- a correr, com *Suporte de memória compartilhada* ligado (no gratuito dura 12 horas por
-  arranque).
+- *Suporte de memória compartilhada* (`HWiNFO_SENS_SM2`) — no gratuito dura 12 horas por
+  arranque;
+- ou o sensor "GPU Hot Spot" a publicar no gadget: botão direito no sensor → *Customize
+  values* → separador *HWiNFO Gadget* → *Report value in Gadget*. Não expira.
 
-Sem isso não parte nada: a linha desaparece e a `delta` volta a ser junção menos core. O
-comando `vitals --hwinfo` mostra exactamente o que está a ser publicado.
+Sem isso não parte nada: a `hotspot` e a `delta` desaparecem. A `delta` não é substituída
+pela junção da memória menos o chip, porque isso compara dois componentes diferentes e não
+diz nada sobre a pasta térmica. O comando `vitals --hwinfo` mostra exactamente o que está a
+ser publicado.
 
 O outro número que o controlador publica é o **T.Limit**: quantos graus faltam até
 estrangular.
@@ -232,11 +237,20 @@ slowdown           87 °C
 shutdown           90 °C
 ```
 
-Confirmado duas vezes contra o `nvidia-smi`: com o core a 74 °C o T.Limit era 11 (85−74);
-a 48 °C era 37 (85−48). Estes limites servem também para as cores da linha do core, em vez
+Confirmado duas vezes contra o `nvidia-smi`: com o chip a 74 °C o T.Limit era 11 (85−74);
+a 48 °C era 37 (85−48). Estes limites servem também para as cores da linha do chip, em vez
 de limiares inventados.
 
-A **junção da memória** — a que interessa mesmo para GDDR6/7 — essa existe e é mostrada.
+A **junção da memória** — a que interessa mesmo para GDDR6/7 — essa existe e é mostrada,
+na linha `memória`.
+
+### Porque diz "chip" e não "core"?
+
+Porque "core" dá a entender o sítio mais quente do chip, e não é. O número é a temperatura
+geral do chip, no sensor de referência: a mesma do Gestor de Tarefas e do `nvidia-smi`, a
+que a LibreHardwareMonitor chama "GPU Core" e as AMD chamam *edge*. O ponto mais quente é o
+hotspot, que costuma estar 10 a 20 °C acima. No `--json` o campo continua a chamar-se
+`GpuCore`, para não partir quem já o lê.
 
 ### Porque não há temperatura do CPU?
 

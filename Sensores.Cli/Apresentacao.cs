@@ -83,13 +83,14 @@ public static class Apresentacao
         {
             Seccao(quadro, Curto(l.GpuNome));
             var limite = l.GpuLimite ?? 85f;
-            Linha(quadro, "core", Temperatura(l.GpuCore, limite - 15, limite - 5));
+            // "chip" e não "core": é a temperatura geral, não o ponto mais quente
+            Linha(quadro, "chip", Temperatura(l.GpuCore, limite - 15, limite - 5));
             if (l.GpuHotspot is not null)
                 Linha(quadro, "hotspot", Temperatura(l.GpuHotspot, limite - 15, limite - 5));
             if (l.GpuJuncao is not null)
-                Linha(quadro, "junção", Temperatura(l.GpuJuncao, 85, 95, 110));
-            // prefere hotspot menos core; sem hotspot, junção menos core
-            if ((l.GpuDeltaHotspot ?? l.GpuDelta) is { } delta) Linha(quadro, "delta", Delta(delta));
+                Linha(quadro, "memória", Temperatura(l.GpuJuncao, 85, 95, 110));
+            // só com hotspot a sério: a memória menos o chip não mede nada de útil
+            if (l.GpuDeltaHotspot is { } delta) Linha(quadro, "delta", Delta(delta));
             if (l.GpuMargem is not null) Linha(quadro, "margem", Margem(l.GpuMargem));
             if (l.GpuUso is not null) Linha(quadro, "uso", Carga(l.GpuUso));
             if (l.GpuVramTotal is not null)
@@ -303,7 +304,7 @@ public static class Apresentacao
         return new Medida($"{m:F0} °C", m / 40f, m <= 5 ? Vermelho : m <= 15 ? Amarelo : Verde);
     }
 
-    /// <summary>Delta junção−core: aqui o que conta é a diferença, não o valor absoluto.</summary>
+    /// <summary>Delta hotspot−chip: aqui o que conta é a diferença, não o valor absoluto.</summary>
     private static Medida? Delta(float? delta)
     {
         if (delta is not { } d) return null;
@@ -350,7 +351,7 @@ public static class Apresentacao
         + (l.GpuCore is null && l.GpuUso is null && l.GpuVramTotal is null
             ? 0
             : 2 + 2 + (l.GpuJuncao is null ? 0 : 1) + (l.GpuMargem is null ? 0 : 1)
-                + (l.GpuDelta is null ? 0 : 1) + (l.GpuHotspot is null ? 0 : 1))
+                + (l.GpuDeltaHotspot is null ? 0 : 1) + (l.GpuHotspot is null ? 0 : 1))
         + 2 + 1 + (l.CpuTemp is null ? 0 : 1)
         + 2 + 1
         + (l.Bateria is null ? 0 : 3)

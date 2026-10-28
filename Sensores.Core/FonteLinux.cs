@@ -53,9 +53,11 @@ internal sealed class FonteLinux : IFonteDeSensores
         {
             GpuNome = NomeDaGrafica(amd, nvidia),
 
-            // nas AMD o kernel numera: 1 = borda (core), 2 = junção, 3 = memória
+            // nas AMD o kernel numera: 1 = borda (a temperatura geral), 2 = junção (que é o
+            // hotspot do chip, não a memória), 3 = memória
             GpuCore = amd is not null ? Temperatura(amd, 1) : TemperaturaNvidia(),
-            GpuJuncao = amd is not null ? Temperatura(amd, 2) ?? Temperatura(amd, 3) : null,
+            GpuHotspot = amd is not null ? Temperatura(amd, 2) : null,
+            GpuJuncao = amd is not null ? Temperatura(amd, 3) : null,
             GpuUso = amd is not null ? Percentagem("/sys/class/drm/card0/device/gpu_busy_percent") : UsoNvidia(),
             GpuVramUsada = amd is not null ? MegaBytes("/sys/class/drm/card0/device/mem_info_vram_used") : null,
             GpuVramTotal = amd is not null ? MegaBytes("/sys/class/drm/card0/device/mem_info_vram_total") : null,

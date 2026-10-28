@@ -5,7 +5,18 @@ namespace Sensores.Core;
 public sealed record Leitura
 {
     public string GpuNome { get; init; } = "GPU";
+
+    /// <summary>
+    /// Temperatura geral do chip, no sensor de referencia: a que a NVIDIA, o nvidia-smi e o
+    /// Gestor de Tarefas mostram (na AMD, a "edge"). Chama-se GpuCore por compatibilidade com
+    /// o --json, mas nao e o ponto mais quente do chip: esse e o <see cref="GpuHotspot"/>.
+    /// </summary>
     public float? GpuCore { get; init; }
+
+    /// <summary>
+    /// Temperatura de juncao da memoria GDDR (o ponto mais quente da VRAM). Nunca o hotspot
+    /// do chip, mesmo nas AMD, onde o kernel chama "junction" ao hotspot.
+    /// </summary>
     public float? GpuJuncao { get; init; }
     public float? GpuUso { get; init; }
     public float? GpuVramUsada { get; init; }   // MB
@@ -16,28 +27,23 @@ public sealed record Leitura
     /// <summary>Temperatura a que a placa comeca a estrangular (85 na RTX 5070).</summary>
     public float? GpuLimite { get; init; }
 
-    /// <summary>Graus que faltam ate ao limite: o "T.Limit" do nvidia-smi, e o mais proximo
-    /// de um hotspot que as GeForce recentes expoem. Verificado: 85 - 48 = 37.</summary>
+    /// <summary>Graus que faltam ate ao limite: o "T.Limit" do nvidia-smi. Verificado:
+    /// 85 - 48 = 37.</summary>
     public float? GpuMargem => GpuLimite is { } limite && GpuCore is { } core ? limite - core : null;
 
     /// <summary>
-    /// Ponto quente do chip. A NVIDIA nao o expoe em API nenhuma nas GeForce recentes;
-    /// so aparece se o HWiNFO estiver a correr e a publicar no registo.
+    /// Ponto quente do chip. As AMD e as NVIDIA ate a serie 40 publicam-no; nas RTX 50 a
+    /// NVIDIA tirou-o da NVAPI e so se le directamente dos registos da placa, com driver de
+    /// kernel, por isso vem do HWiNFO quando esta a correr e a publicar.
     /// </summary>
     public float? GpuHotspot { get; init; }
 
     /// <summary>
-    /// Diferenca entre o ponto de referencia mais quente e o core. E o "delta hotspot" dos
-    /// foruns: usa o hotspot quando existe, e a juncao de memoria quando nao existe.</summary>
-    public float? GpuDeltaHotspot => GpuHotspot is { } h && GpuCore is { } c ? h - c : null;
-
-    /// <summary>
-    /// Diferenca entre a juncao e o core. E o "delta hotspot" de que se fala nos foruns:
-    /// mede a qualidade da transferencia de calor. Nesta placa a juncao e a da memoria
-    /// (a NVIDIA nao expoe hotspot do core na serie 50); em placas que exponham hotspot,
-    /// o valor passa a ser hotspot menos core sem ser preciso mudar nada.
+    /// Hotspot menos temperatura geral: o "delta hotspot" dos foruns, que mede a qualidade da
+    /// transferencia de calor. Sem hotspot fica a null; a juncao da memoria nao o substitui,
+    /// porque e outro componente.
     /// </summary>
-    public float? GpuDelta => GpuJuncao is { } juncao && GpuCore is { } core ? juncao - core : null;
+    public float? GpuDeltaHotspot => GpuHotspot is { } h && GpuCore is { } c ? h - c : null;
 
     public string CpuNome { get; init; } = "CPU";
     public float? CpuUso { get; init; }

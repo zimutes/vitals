@@ -241,27 +241,31 @@ public partial class MainWindow : Window
     {
         var limite = l.GpuLimite ?? 85f;   // limiares vindos da própria placa
 
-        yield return new("gpu.core", "GPU", "core",
-            "Temperatura do chip da gráfica, no sensor principal. É a mesma que o Gestor de Tarefas mostra.",
+        // os ids ficam "gpu.core" e "gpu.juncao" para não perder as escolhas já gravadas
+        yield return new("gpu.core", "GPU", "chip",
+            "Temperatura geral do chip, no sensor de referência: a mesma que o Gestor de Tarefas e o " +
+            "nvidia-smi mostram. Não é o ponto mais quente do chip — esse é o hotspot, que costuma " +
+            "estar 10 a 20 °C acima.",
             x => Temperatura(x.GpuCore, limite - 15, limite - 5));
 
-        yield return new("gpu.juncao", "GPU", "junção",
-            "Temperatura de junção da memória GDDR7: o ponto mais quente da VRAM. É o valor que na AMD se chama junction e o mais próximo de um \"hotspot\" que esta placa expõe.",
+        yield return new("gpu.juncao", "GPU", "memória",
+            "Temperatura de junção da memória GDDR: o ponto mais quente da VRAM. É a memória, não o chip.",
             x => Temperatura(x.GpuJuncao, 85, 95, 110));
 
         if (l.GpuHotspot is not null)
+        {
             yield return new("gpu.hotspot", "GPU", "hotspot",
-                "Ponto mais quente do chip. A NVIDIA não o expõe em API nenhuma nas GeForce recentes: " +
-                "este valor vem do HWiNFO, que o lê com driver próprio e o publica no registo do Windows. " +
-                "Se o HWiNFO fechar, a linha desaparece.",
+                "Ponto mais quente do chip. Nas RTX 50 a NVIDIA tirou-o das APIs e só se lê " +
+                "directamente dos registos da placa: este valor vem do HWiNFO, que o faz com driver " +
+                "próprio. Se o HWiNFO fechar, a linha desaparece.",
                 x => Temperatura(x.GpuHotspot, limite - 15, limite - 5));
 
-        yield return new("gpu.delta", "GPU", "delta",
-            "Diferença entre a junção e o core — o \"delta hotspot\" dos fóruns. Mede a qualidade da " +
-            "transferência de calor: quanto maior, pior está a pasta ou os pads. Até 15 °C é normal, " +
-            "acima de 25 °C costuma indicar problema. Usa o hotspot quando o HWiNFO o estiver a " +
-            "publicar; caso contrário usa a junção da memória, que é o que a NVIDIA expõe.",
-            x => Delta(x.GpuDeltaHotspot ?? x.GpuDelta));
+            yield return new("gpu.delta", "GPU", "delta",
+                "Diferença entre o hotspot e a temperatura geral do chip — o \"delta hotspot\" dos " +
+                "fóruns. Mede a qualidade da transferência de calor: quanto maior, pior está a pasta. " +
+                "Até 15 °C é normal, acima de 25 °C costuma indicar problema.",
+                x => Delta(x.GpuDeltaHotspot));
+        }
 
         yield return new("gpu.margem", "GPU", "margem",
             $"Graus que faltam até a placa começar a reduzir desempenho. O limite de operação é {limite:F0} °C, " +
@@ -400,7 +404,7 @@ public partial class MainWindow : Window
     {
         "gpu.core" => 0,
         "gpu.hotspot" => 1,
-        // o delta vem antes da junção: um número sozinho diz menos que a diferença entre dois
+        // o delta vem antes da memória: um número sozinho diz menos que a diferença entre dois
         "gpu.delta" => 2,
         "gpu.margem" => 3,
         "gpu.juncao" => 4,
@@ -466,7 +470,7 @@ public partial class MainWindow : Window
         return new Medida($"{m:F0} °C", m / 40f, cor, m <= 15);
     }
 
-    /// <summary>Delta junção−core: ao contrário das temperaturas, o que conta é a diferença.</summary>
+    /// <summary>Delta hotspot−chip: ao contrário das temperaturas, o que conta é a diferença.</summary>
     private static Medida? Delta(float? delta)
     {
         if (delta is not { } d) return null;
@@ -896,8 +900,9 @@ public partial class MainWindow : Window
             ("Gráfica (NVML / API do fabricante)", l?.GpuCore is not null, l?.GpuNome ?? ""),
             ("Limites térmicos da placa (NVML)", l?.GpuLimite is not null,
                 l?.GpuLimite is { } limite ? $"estrangula aos {limite:F0} °C" : "indisponível"),
-            ("Ponto quente (memória partilhada do HWiNFO)", l?.GpuHotspot is not null,
-                l?.GpuHotspot is not null ? "a publicar" : "HWiNFO 8.53+ tem de estar a correr"),
+            ("Ponto quente (placa ou HWiNFO)", l?.GpuHotspot is not null,
+                l?.GpuHotspot is not null ? "a ler"
+                    : "nas RTX 50: HWiNFO 8.53+ a correr, com memória partilhada ou gadget ligado"),
             ("Processador e memória (Windows)", l?.CpuUso is not null, l?.CpuNome ?? ""),
             ("Temperatura do processador (MSR)", l?.CpuTemp is not null,
                 l?.CpuTemp is not null ? "a ler" : "driver bloqueado"),

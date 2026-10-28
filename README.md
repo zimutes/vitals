@@ -24,12 +24,12 @@ which API gives what, the traps, and how each number is obtained.*
 > exposed at all. Expect rows to be missing. Nothing here is tested broadly. No warranty of
 > any kind, express or implied — see [LICENSE](LICENSE).
 >
-> **The GPU hot spot needs HWiNFO.** NVIDIA does not publish that sensor through any public
-> interface, so Vitals reads it from HWiNFO's shared memory. The `hotspot` row and the
-> per-module GDDR temperatures only appear with **HWiNFO 8.53 or newer actually running, and
-> *Shared Memory Support* enabled in its settings** — the details are in
-> [the FAQ](#gpu-hot-spot-not-from-nvidia-but-hwinfo-has-it). Without it nothing breaks;
-> those rows simply disappear.
+> **On RTX 50 cards, the GPU hot spot needs HWiNFO.** NVIDIA removed that sensor from its
+> public interfaces, so Vitals reads it from HWiNFO. The `hotspot` and `delta` rows and the
+> per-module GDDR temperatures only appear with **HWiNFO 8.53 or newer actually running,
+> with *Shared Memory Support* enabled or the sensor reported to the gadget** — the details
+> are in [the FAQ](#gpu-hot-spot-not-from-nvidia-but-hwinfo-has-it). Without it nothing
+> breaks; those rows simply disappear.
 >
 > **This README was written by AI** (Claude), from the source code, and reviewed by the
 > author before publishing.
@@ -47,8 +47,8 @@ which API gives what, the traps, and how each number is obtained.*
   Vitals 1.0                    by zimutes
 
   GPU
-    core               51 °C  ━━━━━━━───────
-    junção             58 °C  ━━━━━━━╸──────
+    chip               51 °C  ━━━━━━━───────
+    memória            58 °C  ━━━━━━━╸──────
     margem             34 °C  ━━━━━━━━━━━╸──
     uso                  3 %  ╸─────────────
     vram         1,5/16,0 GB  ━╸────────────
@@ -72,10 +72,10 @@ which API gives what, the traps, and how each number is obtained.*
 
 | Reading | Source | Needs admin |
 |---|---|---|
-| GPU core temperature | NVML / vendor API | no |
-| **GPU memory junction temperature** | vendor API | no |
+| GPU overall chip temperature (`chip` row) | NVML / vendor API | no |
+| **GPU memory junction temperature** (`memória` row) | vendor API | no |
 | **Thermal headroom (T.Limit)** | NVML thresholds | no |
-| **GPU hot spot** | HWiNFO shared memory | no, but HWiNFO must run |
+| **GPU hot spot** | the card (AMD, NVIDIA up to the 40 series); on RTX 50, HWiNFO | no, but on RTX 50 HWiNFO must run |
 | Per-module GDDR7 temperatures | HWiNFO shared memory | no, but HWiNFO must run |
 | GPU load, VRAM, power, fan | vendor API | no |
 | CPU load | Windows counters | no |
@@ -92,10 +92,10 @@ never substitutes a plausible-looking number for a missing sensor.
 
 | Hardware | Status | Notes |
 |---|---|---|
-| NVIDIA GeForce (Ada, Blackwell) | **Tested** | Core, memory junction, headroom, load, VRAM, power, fan |
-| NVIDIA GeForce (older) | Expected to work | Junction temperature depends on the board exposing it |
-| AMD Radeon | **Untested** | Falls back to `GPU Hot Spot` for the junction row; the headroom row disappears (NVIDIA-only API) |
-| Intel Arc / integrated | **Untested** | Core temperature and load only, most likely |
+| NVIDIA GeForce (Ada, Blackwell) | **Tested** | Chip, memory junction, headroom, load, VRAM, power, fan |
+| NVIDIA GeForce (older) | Expected to work | Memory junction temperature depends on the board exposing it |
+| AMD Radeon | **Untested** | `GPU Hot Spot` goes to the hotspot row and `GPU Memory` to the memory row; the headroom row disappears (NVIDIA-only API) |
+| Intel Arc / integrated | **Untested** | Chip temperature and load only, most likely |
 | AMD Ryzen | **Tested** | Load yes; temperature blocked on the test machine, see FAQ |
 | Intel Core | **Untested** | Reads `CPU Package` when the driver is available |
 | NVMe drives | **Tested** | Uses the drive's own warning/critical thresholds from SMART |
@@ -115,7 +115,8 @@ attached are very welcome.
 
 - [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) — or build
   self-contained (see below) and carry no dependency at all
-- HWiNFO 8.53+ running, *Shared Memory Support* on, if you want the hot spot row
+- HWiNFO 8.53+ running, with *Shared Memory Support* on or the hot spot sensor reported to
+  the gadget, if you want the hot spot row on an RTX 50
 
 **Linux** — x64 or arm64, for the terminal command only. The published build is
 self-contained: no .NET to install, no root. See [Installing on Linux](#installing-on-linux) below.
@@ -173,7 +174,7 @@ Resize it by hand and it reacts in **both** directions:
   across four columns.
 - **Height** decides how many rows fit. What doesn't fit is **dropped, not scrolled** —
   small means "I'm playing, show me what matters", so rows are ordered by importance
-  (core, hotspot, delta, headroom, junction, loads, memory, disks) and cut at the bottom.
+  (chip, hotspot, delta, headroom, GPU memory, loads, RAM, disks) and cut at the bottom.
   The tooltip says how many are hidden.
 - **Small or narrow switches to compact**: no header, no footer, no section titles, minimal
   spacing. Below 190 px wide the bars go too, so labels and numbers stay readable.
@@ -225,12 +226,12 @@ everything as text files, and `FonteLinux` reads them directly.
 | CPU temperature | `k10temp`, `zenpower`, `coretemp` | **Works** — unlike Windows, where the driver is usually blocked |
 | CPU load and name | `/proc/stat`, `/proc/cpuinfo` | |
 | Memory | `/proc/meminfo` | |
-| AMD GPU: core, junction, load, VRAM | `amdgpu` hwmon, `/sys/class/drm` | The junction temperature comes free — the kernel exposes it as `temp2_input` |
-| NVIDIA GPU: core, thermal headroom | `nvidia` hwmon, NVML | **Load and VRAM stay blank** — not read on Linux yet |
+| AMD GPU: chip, hotspot, memory, load, VRAM | `amdgpu` hwmon, `/sys/class/drm` | The hotspot comes free — the kernel exposes it as `temp2_input` (and calls it *junction*) |
+| NVIDIA GPU: chip, thermal headroom | `nvidia` hwmon, NVML | **Load and VRAM stay blank** — not read on Linux yet |
 | GPU power and fan | hwmon | |
 | Disk temperature | `nvme`, `drivetemp` hwmon | SATA drives need `modprobe drivetemp`; the mapping to mount points is approximate |
 | Battery | `/sys/class/power_supply/BAT*` | |
-| Hot spot, per-module GDDR | — | Not available: those come from HWiNFO, which is Windows-only |
+| NVIDIA hot spot, per-module GDDR | — | Not available: those come from HWiNFO, which is Windows-only |
 
 Motherboard chips — case fans, voltages — need their kernel module loaded first:
 
@@ -251,21 +252,27 @@ couple of machines, not many.
 
 ### GPU Hot Spot: not from NVIDIA, but HWiNFO has it
 
-NVIDIA does not expose the hotspot through any public interface. On an RTX 5070 this was
-checked several ways — `nvidia-smi`, LibreHardwareMonitor, a sweep of NVML field values,
-and the private NVAPI `ThermChannelGetStatus`, mapped bit by bit, which returns exactly two
-channels: core and memory junction.
+On RTX 50 cards NVIDIA removed the hotspot from its public interfaces; the sensor is still
+there, it just is not published. On an RTX 5070 this was checked several ways —
+`nvidia-smi`, LibreHardwareMonitor, a sweep of NVML field values, and the private NVAPI
+`ThermChannelGetStatus`, mapped bit by bit, which returns exactly two channels: the overall
+chip temperature and memory junction. AMD cards and NVIDIA up to the 40 series do publish
+it, and there Vitals reads it from the card.
 
-**HWiNFO reads it anyway**, with its own signed kernel driver, straight off the board — and
-that is also how it gets a temperature for each individual GDDR7 module. Vitals therefore
-reads HWiNFO's shared memory (`HWiNFO_SENS_SM2`) when it is available, and shows a
-`hotspot` row plus a `delta` of hotspot minus core. Requirements:
+**HWiNFO reads it anyway**, with its own signed kernel driver, straight off the card's
+registers — and that is also how it gets a temperature for each individual GDDR7 module.
+Vitals takes it from HWiNFO and shows a `hotspot` row plus a `delta` of hotspot minus chip.
+It needs **HWiNFO 8.53 or newer** (older builds do not have the sensor on Blackwell cards)
+running, with one of these on:
 
-- **HWiNFO 8.53 or newer** — older builds do not have the sensor on Blackwell cards
-- running, with *Shared Memory Support* enabled (free version: 12 hours per launch)
+- *Shared Memory Support* (`HWiNFO_SENS_SM2`) — free version: 12 hours per launch
+- or the "GPU Hot Spot" sensor reported to the gadget: right-click the sensor → *Customize
+  values* → *HWiNFO Gadget* tab → *Report value in Gadget*. This one does not expire.
 
-Without it, nothing breaks: the row disappears and `delta` falls back to memory junction
-minus core. The `--hwinfo` command shows exactly what is being published.
+Without it, nothing breaks: the `hotspot` and `delta` rows disappear. `delta` does not fall
+back to memory junction minus chip, because that compares two different components and says
+nothing about the thermal paste. The `--hwinfo` command shows exactly what is being
+published.
 
 The other number the driver does publish is **T.Limit**: how many degrees are left before
 the card throttles.
@@ -279,11 +286,19 @@ shutdown           90 °C
 ```
 
 Verified twice against `nvidia-smi`: at 74 °C the reported T.Limit was 11 (85−74); at
-48 °C it was 37 (85−48). Those same limits drive the colour of the core row, instead of
+48 °C it was 37 (85−48). Those same limits drive the colour of the chip row, instead of
 hardcoded guesses.
 
 The **memory junction** temperature — the one that actually matters for GDDR6/7 — does
-exist and is shown.
+exist and is shown, in the `memória` row.
+
+### Why does it say "chip" and not "core"?
+
+Because "core" suggests the hottest part of the die, and it is not. The number is the
+overall chip temperature from the reference sensor: the same one Task Manager and
+`nvidia-smi` show, which LibreHardwareMonitor calls "GPU Core" and AMD calls *edge*. The
+hottest point is the hotspot, usually 10 to 20 °C higher. In `--json` the field is still
+named `GpuCore`, so existing consumers do not break.
 
 ### Why is there no CPU temperature?
 

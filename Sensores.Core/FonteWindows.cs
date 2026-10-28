@@ -108,9 +108,11 @@ internal sealed class FonteWindows : IFonteDeSensores
             _primeiraDoHwInfo = false;
         }
 
-        // etiquetas em portugues e ingles, conforme o idioma do HWiNFO.
-        // a memoria partilhada e mais rica; o registo (gadget) fica como alternativa
-        var hotspot = HwInfoMemoria.Procurar(_daMemoriaHwInfo, ["GPU", "NVIDIA", "Radeon"],
+        // primeiro o que a propria placa publica (AMD, NVIDIA ate a serie 40); nas RTX 50 so o
+        // HWiNFO o tem. Etiquetas em portugues e ingles, conforme o idioma do HWiNFO; a memoria
+        // partilhada e mais rica, o registo (gadget) fica como alternativa
+        var hotspot = Valor(gpu, SensorType.Temperature, "GPU Hot Spot", "GPU Junction")
+                   ?? HwInfoMemoria.Procurar(_daMemoriaHwInfo, ["GPU", "NVIDIA", "Radeon"],
                           "ponto quente", "hot spot", "hotspot")
                    ?? HwInfo.Procurar(_doHwInfo, "ponto quente", "hot spot", "hotspot");
 
@@ -123,7 +125,7 @@ internal sealed class FonteWindows : IFonteDeSensores
             GpuNome = Nome(gpu, "GPU"),
             // os nomes mudam entre NVIDIA, AMD e Intel: tenta-se por ordem
             GpuCore = Valor(gpu, SensorType.Temperature, "GPU Core", "GPU Temperature", "GPU Package"),
-            GpuJuncao = Valor(gpu, SensorType.Temperature, "GPU Memory Junction", "GPU Hot Spot", "GPU Junction"),
+            GpuJuncao = Valor(gpu, SensorType.Temperature, "GPU Memory Junction", "GPU Memory"),
             GpuUso = Valor(gpu, SensorType.Load, "GPU Core", "D3D 3D", "GPU Total"),
             GpuVramUsada = Valor(gpu, SensorType.SmallData, "GPU Memory Used", "D3D Dedicated Memory Used"),
             GpuVramTotal = Valor(gpu, SensorType.SmallData, "GPU Memory Total"),
